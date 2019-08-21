@@ -155,12 +155,27 @@ namespace MMALSharp
         /// <returns>The awaitable Task.</returns>
         public async Task TakePicture(ICaptureHandler handler, MMALEncoding encodingType, MMALEncoding pixelFormat)
         {
+            await TakePicture(handler, encodingType, pixelFormat, 90, true);
+        }
+
+        /// <summary>
+        /// Self-contained method for capturing a single image from the camera still port.
+        /// An MMALImageEncoder component will be created and attached to the still port.
+        /// </summary>
+        /// <param name="handler">The image capture handler to apply to the encoder component.</param>
+        /// <param name="encodingType">The image encoding type e.g. JPEG, BMP.</param>
+        /// <param name="pixelFormat">The pixel format to use with the encoder e.g. I420 (YUV420).</param>
+        /// <param name="quality">The output quality. Only affects JPEG quality for image stills.</param> 
+        /// <param name="warmup"></param>
+        /// <returns>The awaitable Task.</returns>
+        public async Task TakePicture(ICaptureHandler handler, MMALEncoding encodingType, MMALEncoding pixelFormat, int quality, bool warmup)
+        {
             using (var imgEncoder = new MMALImageEncoder(handler))
             using (var renderer = new MMALNullSinkComponent())
             {
                 this.ConfigureCameraSettings();
 
-                var portConfig = new MMALPortConfig(encodingType, pixelFormat, 90);
+                var portConfig = new MMALPortConfig(encodingType, pixelFormat, quality);
 
                 imgEncoder.ConfigureOutputPort(portConfig);
 
@@ -173,7 +188,9 @@ namespace MMALSharp
                                     $"Encoder: {encodingType.EncodingName}. Pixel Format: {pixelFormat.EncodingName}.");
 
                 // Camera warm up time
-                await Task.Delay(2000).ConfigureAwait(false);
+                if (warmup){
+                    await Task.Delay(2000).ConfigureAwait(false);
+                }
                 await this.ProcessAsync(this.Camera.StillPort).ConfigureAwait(false);
             }
         }
